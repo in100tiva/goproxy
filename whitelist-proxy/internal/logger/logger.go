@@ -33,6 +33,18 @@ type Logger struct {
 	ring     []Decision
 	ringHead int
 	ringSize int
+
+	// Contadores totais desde a inicialização.
+	startedAt    time.Time
+	allowCount   uint64
+	blockCount   uint64
+}
+
+// Stats devolve um snapshot dos contadores acumulados.
+type Stats struct {
+	StartedAt  time.Time `json:"started_at"`
+	AllowCount uint64    `json:"allow_count"`
+	BlockCount uint64    `json:"block_count"`
 }
 
 // New abre/cria a pasta de logs e retorna um logger pronto para uso.
@@ -48,6 +60,7 @@ func New(dir string, bufferCap int) (*Logger, error) {
 		dir:       dir,
 		bufferCap: bufferCap,
 		ring:      make([]Decision, bufferCap),
+		startedAt: time.Now(),
 	}
 	if err := l.rotateLocked(time.Now()); err != nil {
 		return nil, err
@@ -77,6 +90,14 @@ func (l *Logger) Log(d Decision) {
 		l.ringSize++
 	}
 
+	// Contadores acumulados (info não conta).
+	switch d.Action {
+	case "allow":
+		l.allowCount++
+	case "block":
+		l.blockCount++
+	}
+
 	// Arquivo (uma linha JSON por decisão — formato JSONL).
 	if l.file != nil {
 		b, err := json.Marshal(d)
@@ -84,6 +105,17 @@ func (l *Logger) Log(d Decision) {
 			b = append(b, '\n')
 			_, _ = l.file.Write(b)
 		}
+	}
+}
+
+// Stats devolve um snapshot dos contadores acumulados.
+func (l *Logger) Stats() Stats {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return Stats{
+		StartedAt:  l.startedAt,
+		AllowCount: l.allowCount,
+		BlockCount: l.blockCount,
 	}
 }
 

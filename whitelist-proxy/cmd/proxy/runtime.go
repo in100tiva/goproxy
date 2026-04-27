@@ -23,9 +23,9 @@ const (
 	adminAddr = "127.0.0.1:8081"
 )
 
-// runtime agrupa tudo que precisa estar vivo para o serviço funcionar.
+// appRuntime agrupa tudo que precisa estar vivo para o serviço funcionar.
 // É reutilizado tanto pelo modo foreground quanto pelo modo Windows Service.
-type runtime struct {
+type appRuntime struct {
 	log      *logger.Logger
 	matcher  *filter.Matcher
 	watcher  *config.Watcher
@@ -38,7 +38,7 @@ type runtime struct {
 
 // startRuntime inicializa todos os componentes e começa a aceitar conexões.
 // Devolve o runtime pronto para shutdown via stop().
-func startRuntime() (*runtime, error) {
+func startRuntime() (*appRuntime, error) {
 	dir, err := executableDir()
 	if err != nil {
 		return nil, fmt.Errorf("descobrindo diretório do binário: %w", err)
@@ -87,7 +87,7 @@ func startRuntime() (*runtime, error) {
 	}()
 
 	tokenPath := filepath.Join(dir, "admin.token")
-	adminSrv, err := admin.New(adminAddr, tokenPath, whitelistPath, matcher, lg)
+	adminSrv, err := admin.New(adminAddr, tokenPath, whitelistPath, proxyAddr, matcher, lg)
 	if err != nil {
 		return nil, fmt.Errorf("admin: %w", err)
 	}
@@ -109,7 +109,7 @@ func startRuntime() (*runtime, error) {
 		lg.Infof("proxy do sistema configurado para %s", proxyAddr)
 	}
 
-	return &runtime{
+	return &appRuntime{
 		log:      lg,
 		matcher:  matcher,
 		watcher:  watcher,
@@ -121,7 +121,7 @@ func startRuntime() (*runtime, error) {
 }
 
 // stop encerra todos os componentes na ordem correta. Idempotente.
-func (r *runtime) stop() {
+func (r *appRuntime) stop() {
 	if r == nil {
 		return
 	}
@@ -154,8 +154,8 @@ func runForeground() error {
 	}
 	fmt.Println("Proxy ativo em", proxyAddr)
 	fmt.Println("Admin ativo em", adminAddr)
-	fmt.Println("Token admin em:", filepath.Join(rt.dir, "admin.token"))
 	fmt.Println("Whitelist em:  ", filepath.Join(rt.dir, "whitelist.json"))
+	fmt.Println("UI:            http://" + adminAddr + "/?t=" + rt.admin.Token())
 	fmt.Println("Pressione Ctrl+C para parar.")
 
 	sig := make(chan os.Signal, 1)

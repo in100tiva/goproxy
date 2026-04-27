@@ -63,7 +63,36 @@ proxy.exe start       inicia o serviço
 proxy.exe stop        para o serviço
 proxy.exe run         executa em foreground (debug)
 proxy.exe status      mostra o estado do serviço e do proxy do sistema
+proxy.exe ui          imprime e abre a URL da UI web (com token)
 ```
+
+## Interface web
+
+O binário traz uma **UI web embutida** servida pelo próprio admin server
+em `http://127.0.0.1:8081/`. Não precisa instalar nada além do `proxy.exe`
+— o HTML/CSS/JS está embutido via `embed.FS`.
+
+Para abrir:
+
+```powershell
+& 'C:\Program Files\WhitelistProxy\proxy.exe' ui
+```
+
+O comando imprime uma URL com o token na query (`?t=...`) e tenta abrir o
+navegador. Na primeira visita o token fica salvo em `localStorage`, então
+nas próximas vezes basta abrir `http://127.0.0.1:8081/`.
+
+A UI tem três abas:
+
+- **Whitelist** — tabela editável (adicionar/remover/editar regras inline)
+  com tipos `exact`/`wildcard`/`regex`. Botão **Salvar** persiste no
+  `whitelist.json` e aplica imediatamente. Botão **Recarregar do disco**
+  pega o que estiver no arquivo (útil se você editou no Notepad).
+- **Logs** — tabela das últimas decisões com auto-refresh a cada 3s,
+  filtros por ação (allow/block/info) e por host.
+- **Status** — endereços, caminhos, regras carregadas, uptime, contadores
+  de decisões e um **testador de host** (digite um domínio e veja se ele
+  seria permitido — sem precisar acessar de fato).
 
 Todos os subcomandos que mexem no SCM (`install`, `uninstall`, `start`, `stop`)
 exigem prompt elevado.
@@ -104,13 +133,22 @@ curl.exe -X POST -H "Authorization: Bearer $token" http://127.0.0.1:8081/whiteli
 ## API administrativa
 
 Escuta em `127.0.0.1:8081` (loopback apenas). Autenticação por Bearer token
-gerado na primeira execução em `admin.token` ao lado do binário.
+no header `Authorization: Bearer <token>` **ou** via query string `?t=<token>`
+(usada pela UI no link inicial). O token é gerado na primeira execução em
+`admin.token` ao lado do binário.
 
-| Método | Caminho                | Descrição                                  |
-|--------|------------------------|--------------------------------------------|
-| GET    | `/whitelist`           | Devolve a lista carregada em memória       |
-| POST   | `/whitelist/reload`    | Recarrega a whitelist do disco             |
-| GET    | `/logs/recent?n=200`   | Últimas N decisões (default 100, máx 1000) |
+| Método  | Caminho                  | Descrição                                  |
+|---------|--------------------------|--------------------------------------------|
+| GET     | `/api/whitelist`         | Devolve a lista carregada em memória       |
+| PUT     | `/api/whitelist`         | Substitui a lista (body JSON), valida e persiste em disco |
+| POST    | `/api/whitelist/reload`  | Recarrega a whitelist do disco             |
+| GET     | `/api/logs/recent?n=200` | Últimas N decisões (default 100)           |
+| GET     | `/api/status`            | Info do serviço + contadores               |
+| POST    | `/api/test?host=X`       | Devolve `{host, allowed}` sem fazer requisição |
+| GET     | `/`                      | UI web (HTML/CSS/JS embutidos)             |
+
+Os caminhos legados sem prefixo `/api` continuam funcionando para
+compatibilidade (`/whitelist`, `/whitelist/reload`, `/logs/recent`).
 
 ## Logs
 
@@ -169,6 +207,7 @@ whitelist-proxy/
 ├── cmd/proxy/
 │   ├── main.go              # dispatcher de subcomandos
 │   ├── runtime.go           # composição (logger + matcher + watcher + proxy + admin)
+│   ├── ui.go                # subcomando "ui" (abre navegador com token)
 │   ├── service_windows.go   # integração com Windows Service Manager
 │   └── service_other.go     # stubs cross-plataforma
 ├── internal/
@@ -182,6 +221,7 @@ whitelist-proxy/
 │   ├── sysproxy/windows.go  # implementação do registro do Windows + WinINet
 │   ├── sysproxy/other.go    # stub no-op
 │   ├── admin/server.go      # API REST (auth via Bearer token)
+│   ├── admin/ui/            # UI web embutida (index.html + style.css + app.js)
 │   └── logger/logger.go     # log estruturado JSONL com rotação diária
 ├── whitelist.json           # exemplo
 ├── install.ps1              # script de instalação

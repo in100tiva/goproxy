@@ -70,6 +70,12 @@ func main() {
 			os.Exit(1)
 		}
 
+	case "ui":
+		if err := openUI(); err != nil {
+			fmt.Fprintln(os.Stderr, "erro:", err)
+			os.Exit(1)
+		}
+
 	case "help", "-h", "--help":
 		printUsage()
 
@@ -91,6 +97,7 @@ Subcomandos:
   start       inicia o serviço
   stop        para o serviço
   status      mostra estado do serviço e do proxy do sistema
+  ui          imprime e abre a URL da UI web (com token)
   help        mostra esta mensagem
 `, exe)
 }

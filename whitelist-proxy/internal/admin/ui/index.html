@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whitelist Proxy</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="logo">●</span>
+      <strong>Whitelist Proxy</strong>
+      <span id="status-pill" class="pill pill-muted">conectando…</span>
+    </div>
+    <nav>
+      <button data-tab="whitelist" class="tab active">Whitelist</button>
+      <button data-tab="logs" class="tab">Logs</button>
+      <button data-tab="status" class="tab">Status</button>
+    </nav>
+    <div class="header-actions">
+      <button id="logout" class="btn btn-ghost" title="Esquecer token salvo">Sair</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- LOGIN -->
+    <section id="view-login" class="view">
+      <div class="card login-card">
+        <h2>Entrar</h2>
+        <p class="muted">
+          Cole o conteúdo de <code>admin.token</code> (gerado ao lado do binário)
+          para acessar a UI. O token fica salvo no navegador.
+        </p>
+        <input id="token-input" type="password" placeholder="Bearer token (64 hex)" autocomplete="off">
+        <button id="token-submit" class="btn btn-primary">Entrar</button>
+        <div id="login-error" class="error" hidden></div>
+      </div>
+    </section>
+
+    <!-- WHITELIST -->
+    <section id="view-whitelist" class="view" hidden>
+      <div class="toolbar">
+        <button id="add-rule" class="btn">+ Adicionar regra</button>
+        <button id="reload-disk" class="btn btn-ghost">Recarregar do disco</button>
+        <span class="spacer"></span>
+        <span id="dirty-flag" class="pill pill-warn" hidden>alterações não salvas</span>
+        <button id="save-rules" class="btn btn-primary" disabled>Salvar</button>
+      </div>
+
+      <table class="rules-table">
+        <thead>
+          <tr>
+            <th style="width:42%">Padrão</th>
+            <th style="width:14%">Tipo</th>
+            <th>Nota</th>
+            <th style="width:80px"></th>
+          </tr>
+        </thead>
+        <tbody id="rules-body"></tbody>
+      </table>
+
+      <div class="hint">
+        <strong>exact</strong> bate o host literalmente.
+        <strong>wildcard</strong> usa o formato <code>*.exemplo.com</code> e libera
+        também o domínio raiz. <strong>regex</strong> aceita qualquer expressão Go
+        aplicada ao host em lowercase, sem porta.
+      </div>
+    </section>
+
+    <!-- LOGS -->
+    <section id="view-logs" class="view" hidden>
+      <div class="toolbar">
+        <label class="check">
+          <input type="checkbox" id="auto-refresh" checked>
+          Atualizar a cada 3s
+        </label>
+        <select id="filter-action">
+          <option value="">Todas as ações</option>
+          <option value="allow">Apenas permitidos</option>
+          <option value="block">Apenas bloqueados</option>
+          <option value="info">Apenas info</option>
+        </select>
+        <input id="filter-host" type="search" placeholder="Filtrar por host…">
+        <span class="spacer"></span>
+        <button id="refresh-logs" class="btn btn-ghost">Atualizar agora</button>
+      </div>
+
+      <table class="logs-table">
+        <thead>
+          <tr>
+            <th style="width:170px">Hora</th>
+            <th style="width:80px">Ação</th>
+            <th style="width:70px">Proto</th>
+            <th>Host</th>
+            <th style="width:130px">Cliente</th>
+            <th>Motivo</th>
+          </tr>
+        </thead>
+        <tbody id="logs-body"></tbody>
+      </table>
+    </section>
+
+    <!-- STATUS -->
+    <section id="view-status" class="view" hidden>
+      <div class="status-grid">
+        <div class="card">
+          <h3>Serviço</h3>
+          <dl id="status-info">
+            <dt>Proxy</dt><dd id="s-proxy">—</dd>
+            <dt>Admin</dt><dd id="s-admin">—</dd>
+            <dt>Whitelist</dt><dd id="s-whitelist">—</dd>
+            <dt>Regras carregadas</dt><dd id="s-rules">—</dd>
+            <dt>Iniciado em</dt><dd id="s-started">—</dd>
+            <dt>Uptime</dt><dd id="s-uptime">—</dd>
+          </dl>
+        </div>
+
+        <div class="card">
+          <h3>Decisões acumuladas</h3>
+          <div class="counters">
+            <div class="counter counter-allow">
+              <span class="counter-num" id="s-allow">0</span>
+              <span class="counter-label">permitidas</span>
+            </div>
+            <div class="counter counter-block">
+              <span class="counter-num" id="s-block">0</span>
+              <span class="counter-label">bloqueadas</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Testar host</h3>
+          <p class="muted">
+            Veja se um host seria permitido pela whitelist atual sem precisar
+            tentar acessar.
+          </p>
+          <div class="test-row">
+            <input id="test-host" type="text" placeholder="ex.: docs.google.com">
+            <button id="test-submit" class="btn btn-primary">Testar</button>
+          </div>
+          <div id="test-result" class="test-result" hidden></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
