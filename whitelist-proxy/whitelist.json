@@ -1,0 +1,12 @@
+{
+  "rules": [
+    {"pattern": "google.com", "type": "exact"},
+    {"pattern": "*.google.com", "type": "wildcard", "note": "Google e subdomínios"},
+    {"pattern": "*.googleapis.com", "type": "wildcard"},
+    {"pattern": "*.gstatic.com", "type": "wildcard"},
+    {"pattern": "github.com", "type": "exact"},
+    {"pattern": "*.github.com", "type": "wildcard"},
+    {"pattern": "*.githubusercontent.com", "type": "wildcard"},
+    {"pattern": "^([a-z0-9-]+\\.)?empresa\\.com\\.br$", "type": "regex", "note": "Domínios da empresa"}
+  ]
+}

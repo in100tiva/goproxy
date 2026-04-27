@@ -1,0 +1,9 @@
+# Binários gerados
+*.exe
+/proxy
+/whitelist-proxy/proxy
+/whitelist-proxy/proxy.exe
+
+# Artefatos de runtime que aparecem ao lado do binário em produção
+whitelist-proxy/admin.token
+whitelist-proxy/logs/
